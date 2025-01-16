@@ -82,4 +82,13 @@ public class SecurityConfigEx05Test {
 			.andExpect(redirectedUrl("http://localhost/user/login"))
 			.andDo(print());
 	}
+	
+	@Test
+	@Order(6)
+	public void testLoginPage() throws Throwable {
+		mvc.perform(get("/user/login"))
+			.andExpect(status().isOk())
+			.andExpect(content().string("this is login form"))
+			.andDo(print());
+	}
 }
