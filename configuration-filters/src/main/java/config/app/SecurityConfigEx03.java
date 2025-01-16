@@ -12,20 +12,26 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfigEx03 {
-    @Bean
-    public WebSecurityCustomizer webSecurityCustomizer() {
-        return new WebSecurityCustomizer() {
-            @Override
-            public void customize(WebSecurity web) {
-                web
-                    .ignoring()
-                    .requestMatchers(new AntPathRequestMatcher("/assets/**"));
-            }
-        };
-    }
+	@Bean
+	public WebSecurityCustomizer webSecurityCustomizer() {
+		return new WebSecurityCustomizer() {
+			@Override
+			public void customize(WebSecurity web) {
+				web.ignoring().requestMatchers(new AntPathRequestMatcher("/assets/**"));
+			}
+		};
+	}
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http.build();
-    }
+	@Bean
+	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+		http
+			.formLogin((formLogin) -> {})
+			.httpBasic((httpBasic) -> {})
+			.authorizeHttpRequests((authorizeRequests) -> {
+			/* Access Control List(ACL) */
+			authorizeRequests
+				.anyRequest().permitAll();
+		});
+		return http.build();
+	}
 }

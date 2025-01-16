@@ -23,19 +23,63 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes={WebConfig.class, SecurityConfigEx05.class})
+@ContextConfiguration(classes = { WebConfig.class, SecurityConfigEx05.class })
 @WebAppConfiguration
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class SecurityConfigEx05Test {
-    private MockMvc mvc;
-    private FilterChainProxy filterChainProxy;
+	private MockMvc mvc;
+	private FilterChainProxy filterChainProxy;
 
-    @BeforeEach
-    public void setup(WebApplicationContext context) {
-        filterChainProxy = (FilterChainProxy)context.getBean("springSecurityFilterChain", Filter.class);
-        mvc = MockMvcBuilders
-                .webAppContextSetup(context)
-                .addFilter(new DelegatingFilterProxy(filterChainProxy), "/*")
-                .build();
-    }
+	@BeforeEach
+	public void setup(WebApplicationContext context) {
+		filterChainProxy = (FilterChainProxy) context.getBean("springSecurityFilterChain", Filter.class);
+		mvc = MockMvcBuilders.webAppContextSetup(context).addFilter(new DelegatingFilterProxy(filterChainProxy), "/*")
+				.build();
+	}
+
+	@Test
+	@Order(1)
+	public void testSecurityFilterChains() {
+		List<SecurityFilterChain> securityFilterChains = filterChainProxy.getFilterChains();
+		assertEquals(2, securityFilterChains.size());
+	}
+
+	@Test
+	@Order(2)
+	public void testSecurityFilterChain02() {
+		SecurityFilterChain securityFilterChain = filterChainProxy.getFilterChains().getLast();
+		List<Filter> filters = securityFilterChain.getFilters();
+
+		assertEquals(12, filters.size());
+
+		// AllFilter
+		for (Filter filter : filters) {
+			System.out.println(filter.getClass().getSimpleName());
+		}
+	}
+
+	@Test
+	@Order(3)
+	public void testWebSecurity() throws Throwable {
+		mvc.perform(get("/assets/images/logo.svg")).andExpect(status().isOk())
+				.andExpect(content().contentType("image/svg+xml")).andDo(print());
+	}
+
+	@Test
+	@Order(4)
+	public void testNonAuthenticated() throws Throwable {
+		mvc.perform(get("/ping"))
+				.andExpect(status().isOk())
+				.andExpect(content().string("pong"))
+				.andDo(print());
+	}
+
+	@Test
+	@Order(4)
+	public void testAuthenticated() throws Throwable {
+		mvc.perform(get("/board/write"))
+			.andExpect(status().is3xxRedirection())
+			.andExpect(redirectedUrl("http://localhost/user/login"))
+			.andDo(print());
+	}
 }

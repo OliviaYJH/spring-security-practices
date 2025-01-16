@@ -1,7 +1,6 @@
 package config.app;
 
 import config.WebConfig;
-import config.app.SecurityConfigEx02;
 import jakarta.servlet.Filter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,18 +24,44 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes={WebConfig.class, SecurityConfigEx02.class})
+@ContextConfiguration(classes = { WebConfig.class, SecurityConfigEx02.class })
 @WebAppConfiguration
 public class SecurityConfigEx02Test {
-    private MockMvc mvc;
-    private FilterChainProxy filterChainProxy;
+	private MockMvc mvc;
+	private FilterChainProxy filterChainProxy;
 
-    @BeforeEach
-    public void setup(WebApplicationContext context) {
-        filterChainProxy = (FilterChainProxy)context.getBean("springSecurityFilterChain", Filter.class);
-        mvc = MockMvcBuilders
-                .webAppContextSetup(context)
-                .addFilter(new DelegatingFilterProxy(filterChainProxy), "/*")
-                .build();
-    }
+	@BeforeEach
+	public void setup(WebApplicationContext context) {
+		filterChainProxy = (FilterChainProxy) context.getBean("springSecurityFilterChain", Filter.class);
+		mvc = MockMvcBuilders.webAppContextSetup(context).addFilter(new DelegatingFilterProxy(filterChainProxy), "/*")
+				.build();
+	}
+
+	@Test
+	public void testSecurityFilterChains() {
+		List<SecurityFilterChain> securityFilterChains = filterChainProxy.getFilterChains();
+		assertEquals(2, securityFilterChains.size());
+	}
+
+	@Test
+	public void testSecurityFilterChain02() {
+		SecurityFilterChain securityFilterChain = filterChainProxy.getFilterChains().getLast();
+		List<Filter> filters = securityFilterChain.getFilters();
+
+		assertEquals(15, filters.size());
+
+		// BasicAuthenticationFilter
+		assertEquals("BasicAuthenticationFilter", filters.get(10).getClass().getSimpleName());
+	}
+
+	@Test
+	public void testWebSecurity() throws Throwable {
+		mvc.perform(get("/assets/images/logo.svg")).andExpect(status().isOk())
+				.andExpect(content().contentType("image/svg+xml")).andDo(print());
+	}
+
+	@Test
+	public void testHttpSecurity() throws Throwable {
+		mvc.perform(get("/ping")).andExpect(status().isOk()).andExpect(content().string("pong")).andDo(print());
+	}
 }
